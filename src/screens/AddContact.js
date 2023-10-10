@@ -7,41 +7,28 @@ import {
     PermissionsAndroid,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import Contacts from "react-native-contacts";
+import * as Contacts from 'expo-contacts';
 
 const AddContact = ({ navigation }) => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [number, setNumber] = useState("");
 
-    const getPermission = () => {
-        PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_CONTACTS, {
-            title: "Contacts",
-            message: "This app would like to view your contacts.",
-            buttonPositive: "Please accept bare mortal",
-        }).then((res) => {
-            if (res == "granted") {
-                let newPerson = {
-                    emailAddresses: [
-                        {
-                            label: "work",
-                            email: email,
-                        },
-                    ],
-                    phoneNumbers: [
-                        {
-                            label: "mobile",
-                            number: number,
-                        },
-                    ],
-                    familyName: name,
-                    givenName: name,
-                };
-
-                Contacts.addContact(newPerson);
-                navigation.goBack();
-            }
-        });
+    const addToContacts = async () => {
+        const { status } = await Contacts.requestPermissionsAsync();
+        if (status === "granted") {
+            const contact = {
+                [Contacts.Fields.FirstName]: name,
+                [Contacts.Fields.Emails]: [email],
+                [Contacts.Fields.PhoneNumbers]: [number],
+            };
+            const contactId = await Contacts.addContactAsync(contact);
+            console.log(`Contact : ${contactId} has been added!`);
+            navigation.goBack();
+        } else {
+            setError("Permission to access contacts is denied");
+            console.log('Persmission Denied!');
+        }
     };
 
     return (
@@ -131,7 +118,7 @@ const AddContact = ({ navigation }) => {
                     backgroundColor: "#000",
                 }}
                 onPress={() => {
-                    getPermission();
+                    addToContacts();
                 }}
             >
                 <Text style={{ color: "white" }}>Save Contact</Text>
